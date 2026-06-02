@@ -1,0 +1,24 @@
+# Environment
+.env
+.venv
+venv/
+__pycache__/
+*.pyc
+
+# Model files
+*.pt
+*.pth
+
+# Datasets
+data/
+dataset/data/
+
+# Outputs
+outputs/
+runs/
+
+# Mac
+.DS_Store
+
+# Logs
+*.log

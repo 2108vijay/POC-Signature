@@ -1,0 +1,43 @@
+services:
+
+  minio:
+    image: minio/minio:latest
+    container_name: sig-poc-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ':9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  api:
+    build:
+      context: /Users/vijayrameshofficialgmail.com/Downloads/signature-poc
+      dockerfile: /Users/vijayrameshofficialgmail.com/Downloads/signature-poc/docker/Dockerfile
+    container_name: sig-poc-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=signature-poc
+      - MINIO_SECURE=false
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  minio_data:
