@@ -21,7 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Register all routers ──────────────────────────────────────
 app.include_router(health.router)
 app.include_router(upload.router)
 app.include_router(files.router)
