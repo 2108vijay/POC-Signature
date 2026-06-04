@@ -1,110 +1,192 @@
 # Signature Detection POC
 
-YOLOv8-based signature detection, enhancement, and verification system.
+YOLOv8-based signature detection and document verification system.
+Detects signatures from cheques, forms, and agreements using two ML models.
 
-## Features
-- **Signature detection** — YOLOv8 fine-tuned to find signatures, initials, and stamps
-- **Quality assessment** — automatic blur/contrast/noise scoring
-- **Image enhancement** — OpenCV denoise → CLAHE → unsharp mask for low-quality scans
-- **Dataset management** — Kaggle downloader + local review before training
-- **Data augmentation** — expands 100 manual samples ~12× for training
-- **MinIO storage** — authenticated object storage with presigned URLs
-- **REST API** — FastAPI endpoints for integration
-- **Dashboard** — Streamlit UI for visual pipeline management
+---
+
+## What It Does
+
+- Accepts a document image (cheque / form / agreement)
+- Classifies the document type automatically
+- Detects and isolates the signature region
+- Stores everything in MinIO object storage
+- Returns a structured JSON result
+
+---
 
 ## Project Structure
-```
-signature-poc/
-├── src/
-│   ├── dataset/
-│   │   ├── kaggle_downloader.py   # Download + preview Kaggle datasets
-│   │   └── augmentor.py           # Signature-safe augmentation
-│   ├── enhancement/
-│   │   └── enhancer.py            # QA scoring + OpenCV enhancement
-│   ├── detection/
-│   │   ├── detector.py            # YOLOv8 inference wrapper
-│   │   └── pipeline.py            # End-to-end orchestrator
-│   └── storage/
-│       └── minio_client.py        # MinIO upload/download/presigned URLs
-├── scripts/
-│   ├── setup.py                   # One-shot project setup
-│   ├── prepare_data.py            # Augment + train/val/test split
-│   ├── train.py                   # Fine-tune YOLOv8
-│   └── run_pipeline.py            # CLI inference
-├── configs/
-│   └── dataset.yaml               # YOLOv8 dataset config
-├── api.py                         # FastAPI REST API
-├── dashboard.py                   # Streamlit dashboard
-├── requirements.txt
-└── .env.example
-```
+POC-Signature/
+│
+├── api/                          ← REST API (Your work)
+│   ├── routers/
+│   │   ├── health.py             # /health, /storage/health
+│   │   ├── upload.py             # /upload
+│   │   ├── files.py              # /files, /files/{name}, DELETE
+│   │   └── detect.py             # /detect — main endpoint
+│   ├── src/
+│   │   └── storage/
+│   │       └── minio_client.py   # MinIO client
+│   ├── models/                   # .pt files go here (see Model Files below)
+│   ├── dependencies.py           # Shared models + storage instance
+│   ├── main.py                   # App entry point
+│   ├── .env.example              # Environment variable template
+│   └── requirements.txt
+│
+├── docker/                       ← Docker setup (Your work)
+│   ├── docker-compose.yml        # MinIO + API services
+│   ├── Dockerfile
+│   └── .env.example
+│
+├── dataset/                      ← Dataset management (Partner's work)
+│   ├── configs/
+│   │   └── dataset.yaml          # YOLOv8 dataset config
+│   └── augmentor.py              # Signature-safe augmentation
+│
+├── training/                     ← Model training (Partner's work)
+│   ├── detector.py               # YOLOv8 inference wrapper
+│   ├── enhancer.py               # Image quality + enhancement
+│   ├── pipeline.py               # End-to-end orchestrator
+│   └── train.py                  # Training script
+│
+├── .gitignore
+└── README.md
+
+---
+
+## Model Files
+
+The `.pt` model files are not included in this repo due to size.
+
+Download from Google Drive: `[share your drive link here]`
+
+Place them in:
+api/models/document_classifier.pt
+api/models/signature_yolov8_v2.pt
+
+### What each model does
+
+| Model | File | Purpose |
+|---|---|---|
+| Document Classifier | `document_classifier.pt` | Identifies cheque / form / agreement / others |
+| Signature Detector | `signature_yolov8_v2.pt` | Finds and crops the signature region |
+
+---
+
+## Team Contributions
+
+| Member | Repo | Responsible For |
+|---|---|---|
+| Vijay | POC-Signature | API, Docker, MinIO storage |
+| Aiswarya | POC-Signature-Training | Dataset, Training, Model weights |
+
+---
 
 ## Quick Start
 
+### 1. Clone the repo
 ```bash
-# 1. Setup
-python scripts/setup.py --kaggle-user YOUR_USER --kaggle-key YOUR_KEY
-
-# 2. Get datasets (review manually in data/preview/ before training)
-python src/dataset/kaggle_downloader.py --download robinreni/signature-verification-dataset
-python src/dataset/kaggle_downloader.py --import-manual /path/to/your/100/images
-
-# 3. Approve after review
-python src/dataset/kaggle_downloader.py --approve robinreni/signature-verification-dataset
-
-# 4. Prepare data (augment + split)
-python scripts/prepare_data.py
-
-# 5. Train
-python scripts/train.py --epochs 100 --device cpu   # or --device 0 for GPU
-
-# 6. Detect signatures
-python scripts/run_pipeline.py --image /path/to/form.jpg
-python scripts/run_pipeline.py --batch /path/to/forms/
-
-# 7. Start API
-python api.py                        # http://localhost:8000/docs
-
-# 8. Start dashboard
-streamlit run dashboard.py           # http://localhost:8501
+git clone https://github.com/2108vijay/POC-Signature.git
+cd POC-Signature
 ```
 
-## MinIO Setup
-
+### 2. Set up environment
 ```bash
-# Start MinIO with Docker
-docker run -p 9000:9000 -p 9001:9001 \
-  -e MINIO_ROOT_USER=minioadmin \
-  -e MINIO_ROOT_PASSWORD=minioadmin \
-  minio/minio server /data --console-address ':9001'
-
-# Console: http://localhost:9001
+cd api
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
-## Recommended Kaggle Datasets
+### 3. Start MinIO via Docker
+```bash
+cd docker
+docker-compose up
+```
 
-| Dataset | Images | Notes |
-|---------|--------|-------|
-| robinreni/signature-verification-dataset | ~1600 | Genuine + forged, best for POC |
-| ishaanv/SigNet | ~8000 | Strong benchmark |
-| divyanshrai3101/handwritten-signatures | ~500 | Quick start |
-| patrickaudriaz/tobacco800 | Varies | Real document forms |
+MinIO Console → `http://localhost:9001`
+
+### 4. Download model files
+Download both `.pt` files from Google Drive and place in `api/models/`
+
+### 5. Start the API
+```bash
+cd api
+python3 main.py
+```
+
+API docs → `http://localhost:8000/docs`
+
+---
 
 ## API Endpoints
 
 | Method | Path | Description |
-|--------|------|-------------|
-| GET | /health | Service health + model status |
-| POST | /detect | Full detection report |
-| POST | /verify | Quick verified/not verdict |
-| GET | /runs | List MinIO stored runs |
-| GET | /storage/health | MinIO connection status |
-| GET | /docs | Swagger UI |
+|---|---|---|
+| GET | `/health` | API + MinIO status |
+| GET | `/storage/health` | MinIO bucket details |
+| POST | `/upload` | Upload image to MinIO |
+| POST | `/detect` | Classify document + detect signature |
+| GET | `/files` | List all stored files |
+| GET | `/files/{name}` | Get presigned URL for a file |
+| DELETE | `/files/{name}` | Delete a file |
+| GET | `/docs` | Swagger UI |
 
-## Classes
+---
 
-| ID | Name | Description |
-|----|------|-------------|
-| 0 | signature | Full handwritten signature |
-| 1 | initials | Abbreviated initials |
-| 2 | stamp | Rubber stamp / seal |
+## Sample JSON Output
+
+Upload a cheque/form/agreement to `/detect` and get back:
+
+```json
+{
+  "document": "cheque.jpg",
+  "document_type": "cheque",
+  "document_confidence": 0.94,
+  "signature_found": true,
+  "signature_verified": true,
+  "total_signatures": 1,
+  "detections": [
+    {
+      "signature_id": 1,
+      "confidence": 0.89,
+      "verified": true,
+      "bounding_box": {
+        "x1": 420,
+        "y1": 310,
+        "x2": 680,
+        "y2": 410,
+        "width": 260,
+        "height": 100
+      },
+      "crop_url": "http://localhost:9000/..."
+    }
+  ],
+  "stored_as": "uploads/abc123_cheque.jpg"
+}
+```
+
+---
+
+## Document Types
+
+| Label | Description |
+|---|---|
+| `cheque` | Bank cheque with MICR line |
+| `form` | Filled application or government form |
+| `agreement` | Legal document or stamp paper |
+| `others` | Unknown document type |
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Object Detection | YOLOv8 (Ultralytics) |
+| Image Enhancement | OpenCV, CLAHE |
+| Storage | MinIO |
+| API | FastAPI + Uvicorn |
+| Containerisation | Docker + Docker Compose |
+| Training | Google Colab (T4 GPU) |
