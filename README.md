@@ -43,9 +43,29 @@ Document-Signature-Detection/
 │   │   ├── config.py                           # Environment variables and settings
 │   │   └── dependencies.py                     # ML models and storage client injection
 │   │
+│   ├── dataset/                                
+│   │   ├── configs/
+│   │   │   └── dataset.yaml                    # YOLOv8 dataset splits and classes
+│   │   └── augmentor.py                        # Image rotation, noise, and adjustments
+│   │
+│   ├── docker/                                 
+│   │   ├── docker-compose.yml                  # Container orchestration (API + MinIO)
+│   │   └── Dockerfile                          # Python 3.11 API image definition
+│   │
+│   ├── docs/                                   
+│   │   ├── api_design.md                       # API endpoint specifications
+│   │   └── architecture.md                     # System architecture documentation
+│   │
+│   ├── logs/                                   
+│   │   └── app.log                             # Auto-generated application logs
+│   │
 │   ├── middleware/                             
 │   │   ├── __init__.py
 │   │   └── request_logger.py                   # Custom HTTP request/response logging
+│   │
+│   ├── models/                                 
+│   │   ├── document_classifier.pt              # Trained document classification weights
+│   │   └── signature_yolov8_v2.pt              # Trained YOLOv8 signature detection weights
 │   │
 │   ├── services/                               
 │   │   ├── __init__.py
@@ -59,6 +79,14 @@ Document-Signature-Detection/
 │   │   ├── __init__.py
 │   │   └── minio_client.py                     # MinIO connection and S3 wrapper methods
 │   │
+│   ├── tests/                                  
+│   │   ├── __init__.py
+│   │   ├── test_auth.py                        # Unit tests for JWT and login
+│   │   ├── test_detect.py                      # Unit tests for the ML pipeline
+│   │   ├── test_health.py                      # Unit tests for system health
+│   │   ├── test_upload.py                      # Unit tests for MinIO uploads
+│   │   └── test_validation.py                  # Unit tests for file formatting
+│   │
 │   ├── training/                               
 │   │   ├── __init__.py
 │   │   ├── detector.py                         # YOLOv8 loading and bounding box isolation
@@ -71,34 +99,6 @@ Document-Signature-Detection/
 │       ├── __init__.py
 │       ├── logger.py                           # Loguru structured JSON log configuration
 │       └── file_validator.py                   # Magic byte checks for secure uploads
-│
-├── models/                                     # Directory for downloaded .pt weights
-│   ├── document_classifier.pt
-│   └── signature_yolov8_v2.pt
-│
-├── dataset/                                    
-│   ├── configs/
-│   │   └── dataset.yaml                        # YOLOv8 dataset splits and classes
-│   └── augmentor.py                            # Image rotation, noise, and adjustments
-│
-├── docker/                                     
-│   ├── docker-compose.yml                      # Container orchestration (API + MinIO)
-│   └── Dockerfile                              # Python 3.11 API image definition
-│
-├── docs/                                       
-│   ├── api_design.md                           # API endpoint specifications
-│   └── architecture.md                         # System architecture documentation
-│
-├── tests/                                      
-│   ├── __init__.py
-│   ├── test_auth.py                            # Unit tests for JWT and login
-│   ├── test_detect.py                          # Unit tests for the ML pipeline
-│   ├── test_health.py                          # Unit tests for system health
-│   ├── test_upload.py                          # Unit tests for MinIO uploads
-│   └── test_validation.py                      # Unit tests for file formatting
-│
-├── logs/                                       
-│   └── app.log                                 # Auto-generated application logs
 │
 ├── main.py                                     # Uvicorn server entry point
 ├── .env                                        # Local environment variables
