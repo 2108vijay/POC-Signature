@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter
-from dependencies import storage
+from SRC.core.dependencies import storage
 
 router = APIRouter(tags=["Health"])
 
@@ -8,8 +8,8 @@ router = APIRouter(tags=["Health"])
 @router.get("/health")
 def health():
     return {
-        "status": "ok",
-        "minio": storage.health_check(),
+        "status":    "ok",
+        "minio":     storage.health_check(),
         "timestamp": datetime.utcnow().isoformat(),
     }
 
