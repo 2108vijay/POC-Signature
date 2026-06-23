@@ -6,7 +6,7 @@ from rich.console import Console
 console = Console()
 
 def main(args):
-    from src.detection.detector import SignatureDetector
+    from detector import SignatureDetector
 
     console.print("[bold cyan]Starting YOLOv8 training...[/bold cyan]")
     console.print(f"  Epochs: {args.epochs} | Batch: {args.batch} | Device: {args.device}")

@@ -165,18 +165,34 @@ def enhance(img: np.ndarray, report: QualityReport) -> np.ndarray:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def process_image(img: np.ndarray,
-                  quality_threshold: float = 55.0
-                  ) -> tuple[np.ndarray, QualityReport]:
-    """
-    Assess quality, enhance if necessary.
-    Returns (final_image, quality_report).
-    """
-    report = assess_quality(img, min_score=quality_threshold)
-    logger.info(f"Quality score: {report.overall_score:.1f}/100 "
-                f"{'— ENHANCING' if report.needs_enhancement else '— OK'}")
+def process_image(
+    img: np.ndarray,
+    quality_threshold: float = 40.0
+) -> tuple[np.ndarray, QualityReport]:
 
+    report = assess_quality(
+        img,
+        min_score=quality_threshold
+    )
+
+    logger.info(
+        f"Quality score: {report.overall_score:.1f}/100"
+    )
+
+    # Reject very poor images
+    if report.overall_score < 40:
+        logger.warning(
+            f"Image Rejected. Quality Score={report.overall_score:.2f}"
+        )
+
+        raise ValueError(
+            f"Image quality below threshold (40). "
+            f"Current score={report.overall_score:.2f}"
+        )
+
+    # Enhance moderate images
     if report.needs_enhancement:
+        logger.info("Enhancing image...")
         img = enhance(img, report)
 
     return img, report
